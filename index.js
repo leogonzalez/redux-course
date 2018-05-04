@@ -1,4 +1,4 @@
-// Library code
+// utils
 
 function generateId() {
   return (
@@ -7,39 +7,17 @@ function generateId() {
       .substring(2) + new Date().getTime().toString(36)
   );
 }
-// function createStore(reducer) {
-//
-//   let state;
-//   let listeners = [];
-//
-//   const getState = () => state;
-//
-//   const subscribe = listener => {
-//     listeners.push(listener);
-//     return () => {
-//       listeners = listeners.filter(l => l !== listener);
-//     };
-//   };
-//
-//   const dispatch = action => {
-//     state = reducer(state, action);
-//     listeners.forEach(listener => listener());
-//   };
-//
-//   return {
-//     getState,
-//     subscribe,
-//     dispatch
-//   };
-// }
 
 // App Code
+
+// keys.js
 const ADD_TODO = "ADD_TODO";
 const REMOVE_TODO = "REMOVE_TODO";
 const TOGGLE_TODO = "TOGGLE_TODO";
 const ADD_GOAL = "ADD_GOAL";
 const REMOVE_GOAL = "REMOVE_GOAL";
 
+//actionCreators.js
 function addTodoAction(todo) {
   return {
     type: ADD_TODO,
@@ -75,7 +53,25 @@ function removeGoalAction(id) {
   };
 }
 
-// Reducer function
+// middleware
+function checkAndDispatch(store, action) {
+  if (
+    action.type === ADD_TODO &&
+    action.todo.name.toLowerCase().indexOf("bitcoin") !== -1
+  ) {
+    return alert("Nope, bad ideia");
+  }
+
+  if (
+    action.type === ADD_GOAL &&
+    action.goal.name.toLowerCase().indexOf("bitcoin") !== -1
+  ) {
+    return alert("Nope, bad ideia");
+  }
+  return store.dispatch(action);
+}
+
+// Reducers
 function todos(state = [], action) {
   switch (action.type) {
     case ADD_TODO:
@@ -105,18 +101,13 @@ function goals(state = [], action) {
   }
 }
 
-//
-// function app(state = {}, action) {
-//   return {
-//     todos: todos(state.todos, action),
-//     goals: goals(state.goals, action)
-//   };
-// }
-
-const store = Redux.createStore(Redux.combineReducers({
-  todos,
-  goals
-}));
+// Store creation and subscripton
+const store = Redux.createStore(
+  Redux.combineReducers({
+    todos,
+    goals
+  })
+);
 
 store.subscribe(() => {
   const { goals, todos } = store.getState();
@@ -126,7 +117,6 @@ store.subscribe(() => {
   todos.forEach(addTodoToDOM);
 });
 
-
 // DOM Code
 
 function addTodoToDOM(todo) {
@@ -135,8 +125,8 @@ function addTodoToDOM(todo) {
   var text = document.createTextNode(todo.name);
 
   const removeBtn = createRemoveButton(() => {
-    store.dispatch(removeTodoAction(todo.id))
-  })
+    store.dispatch(removeTodoAction(todo.id));
+  });
 
   node.appendChild(text);
   node.appendChild(removeBtn);
@@ -153,8 +143,8 @@ function addGoalToDOM(goal) {
   var node = document.createElement("li");
   var text = document.createTextNode(goal.name);
   const removeBtn = createRemoveButton(() => {
-    store.dispatch(removeGoalAction(goal.id))
-  })
+    store.dispatch(removeGoalAction(goal.id));
+  });
   node.appendChild(text);
   node.appendChild(removeBtn);
   ul.appendChild(node);
@@ -173,7 +163,8 @@ function addTodo() {
   const name = input.value;
   input.value = "";
 
-  store.dispatch(
+  checkAndDispatch(
+    store,
     addTodoAction({
       id: generateId(),
       name,
@@ -187,7 +178,8 @@ function addGoal() {
   const name = input.value;
   input.value = "";
 
-  store.dispatch(
+  checkAndDispatch(
+    store,
     addGoalAction({
       id: generateId(),
       name
