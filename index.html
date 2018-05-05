@@ -184,27 +184,37 @@ const store = Redux.createStore(
   addItem = e => {
     e.preventDefault();
     const name = this.input.value;
-    this.input.value = "";
 
-    this.props.store.dispatch(
-      addTodoAction({
-        id: generateId(),
-        name,
-        complete: false
-      })
-    );
+    return API.saveTodo(name).then((todo) => {
+      this.input.value = "";
+      this.props.store.dispatch(
+        addTodoAction(todo)
+      );
+    }).catch(() => {
+      alert('There was an error')
+    })
+
   };
 
   removeItem = todo => {
-    return API.deleteTodo(todo.id)
-      .then(() => {
-        this.props.store.dispatch(removeTodoAction(todo.id));
-      })
+    // this.props.store.dispatch(handleDeleteTodo(todo.id));
 
+    this.props.store.dispatch(removeTodoAction(todo.id));
+
+    return API.deleteTodo(todo.id)
+      .catch(() => {
+        this.props.store.dispatch(addTodoAction(todo))
+        alert('Erro aconteceu')
+      })
   };
 
   toggleItem = (todo) => {
     this.props.store.dispatch(toggleTodoAction(todo.id))
+    return API.saveTodoToggle(todo.id)
+    .catch(() => {
+      this.props.store.dispatch(toggleTodoAction(todo.id))
+      alert('Toggle fudeu')
+    })
   }
 
   render() {
@@ -227,17 +237,25 @@ class Goals extends React.Component {
   addItem = e => {
     e.preventDefault();
     const name = this.input.value;
-    this.input.value = "";
-    this.props.store.dispatch(
-      addGoalAction({
-        id: generateId(),
-        name
-      })
-    );
+    return API.saveGoal(name).then((goal) => {
+      this.input.value = "";
+      this.props.store.dispatch(
+        addGoalAction(goal)
+      );
+    }).catch(() => {
+      alert('Errouuuuuuu')
+    })
   };
 
   removeItem = (goal) => {
     this.props.store.dispatch(removeGoalAction(goal.id));
+
+    return API.deleteGoal(goal.id)
+    .catch(() => {
+      this.props.store.dispatch(addGoalAction(goal));
+      alert('Goal fudeu')
+    })
+
   }
 
   render() {
