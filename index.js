@@ -54,28 +54,6 @@ function removeGoalAction(id) {
 }
 
 // middleware
-function checkAndDispatch(store, action) {
-  // if (
-  //   action.type === ADD_TODO &&
-  //   action.todo.name.toLowerCase().indexOf("bitcoin") !== -1
-  // ) {
-  //   return alert("Nope, bad ideia");
-  // }
-  //
-  // if (
-  //   action.type === ADD_GOAL &&
-  //   action.goal.name.toLowerCase().indexOf("bitcoin") !== -1
-  // ) {
-  //   return alert("Nope, bad ideia");
-  // }
-  // return store.dispatch(action);
-}
-
-// function checker(store) {
-//   return function(next) {
-//     return function(action) {};
-//   };
-// }
 
 const checker = store => next => action => {
   if (
@@ -93,6 +71,15 @@ const checker = store => next => action => {
   }
   return next(action);
 };
+
+const logger = store => next => action => {
+  console.group(action.type);
+  console.log('The action:', action);
+  const result = next(action)
+  console.log('The new state: ', store.getState());
+  console.groupEnd();
+  return result;
+}
 
 // Reducers
 function todos(state = [], action) {
@@ -130,7 +117,7 @@ const store = Redux.createStore(
     todos,
     goals
   }),
-  Redux.applyMiddleware(checker)
+  Redux.applyMiddleware(checker,logger)
 );
 
 store.subscribe(() => {
