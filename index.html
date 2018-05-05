@@ -32,7 +32,7 @@ const TOGGLE_TODO = "TOGGLE_TODO";
 const ADD_GOAL = "ADD_GOAL";
 const REMOVE_GOAL = "REMOVE_GOAL";
 const RECEIVE_DATA = "RECEIVE_DATA";
-const COMPLETED_LOADING = "COMPLETED_LOADING";
+
 //actionCreators.js
 function addTodoAction(todo) {
   return {
@@ -121,7 +121,7 @@ function todos(state = [], action) {
             : Object.assign({}, todo, { complete: !todo.complete })
       );
     case RECEIVE_DATA:
-      return state.concat(...action.todos)
+      return action.todos
     default:
       return state;
   }
@@ -134,7 +134,7 @@ function goals(state = [], action) {
     case REMOVE_GOAL:
       return state.filter(goal => goal.id !== action.id);
     case RECEIVE_DATA:
-      return state.concat(...action.goals)
+      return action.goals
     default:
       return state;
   }
@@ -147,7 +147,7 @@ function loading(state = true, action) {
     case RECEIVE_DATA:
       return false;
     default:
-      return true;
+      return state;
 
   }
 }
