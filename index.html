@@ -128,7 +128,7 @@ function handleToggleTodo(todo) {
 }
 
 function handleAddTodo(name, callback) {
-  return (dispatch) => {
+  return dispatch => {
     return API.saveTodo(name)
       .then(todo => {
         dispatch(addTodoAction(todo));
@@ -137,11 +137,11 @@ function handleAddTodo(name, callback) {
       .catch(() => {
         alert("There was an error");
       });
-  }
+  };
 }
 
 function handleReceiveData() {
-  return (dispatch) => {
+  return dispatch => {
     Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
       store.dispatch(receiveDataAction(todos, goals));
     });
@@ -255,7 +255,7 @@ function List(props) {
 class Todos extends React.Component {
   addItem = e => {
     e.preventDefault();
-    this.props.store.dispatch(
+    this.props.dispatch(
       handleAddTodo(this.input.value, () => {
         return (this.input.value = "");
       })
@@ -263,11 +263,11 @@ class Todos extends React.Component {
   };
 
   removeItem = todo => {
-    this.props.store.dispatch(handleDeleteTodo(todo));
+    this.props.dispatch(handleDeleteTodo(todo));
   };
 
   toggleItem = todo => {
-    this.props.store.dispatch(handleToggleTodo(todo));
+    this.props.dispatch(handleToggleTodo(todo));
   };
 
   render() {
@@ -294,7 +294,7 @@ class Goals extends React.Component {
   addItem = e => {
     e.preventDefault();
 
-    this.props.store.dispatch(
+    this.props.dispatch(
       handleAddGoal(this.input.value, () => {
         this.input.value = "";
       })
@@ -302,7 +302,7 @@ class Goals extends React.Component {
   };
 
   removeItem = goal => {
-    this.props.store.dispatch(handleDeleteGoal(goal));
+    this.props.dispatch(handleDeleteGoal(goal));
   };
 
   render() {
@@ -321,6 +321,10 @@ class Goals extends React.Component {
   }
 }
 
+// how to improve getting the store to our component?
+// 1. Passing store all the way down to nested components is not scalable
+// 2. Re rending components only when the data they need change
+
 class App extends React.Component {
   componentDidMount() {
     const { store } = this.props;
@@ -337,8 +341,8 @@ class App extends React.Component {
           <p>Loading Data</p>
         ) : (
           <div>
-            <Todos todos={todos} store={store} />
-            <Goals goals={goals} store={store} />
+            <Todos todos={todos} dispatch={store.dispatch} />
+            <Goals goals={goals} dispatch={store.dispatch} />
           </div>
         )}
       </div>
@@ -346,7 +350,34 @@ class App extends React.Component {
   }
 }
 
-ReactDOM.render(<App store={store} />, document.getElementById("app"));
+class ConnectedApp extends React.Component {
+  render() {
+    return (
+      <Context.Consumer>
+      {(store) => <App store={store}/>}
+      </Context.Consumer>
+    );
+  }
+}
+
+const Context = React.createContext();
+
+class Provider extends React.Component {
+  render() {
+    return (
+      <Context.Provider value={this.props.store}>
+        {this.props.children}
+      </Context.Provider>
+    );
+  }
+}
+
+ReactDOM.render(
+  <Provider store={store}>
+    <ConnectedApp />
+  </Provider>,
+  document.getElementById("app")
+);
 </script>
   </body>
 </html>
