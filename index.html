@@ -74,8 +74,22 @@ function receiveDataAction(todos, goals) {
     type: RECEIVE_DATA,
     todos,
     goals
-  }
+  };
+}
 
+// TOUGHTH: I want to remove API fetchin logic from component
+// So a good place is the action creator, since it can deal with async and create the action after async resolved
+//
+
+function handleDeleteTodo(todo) {
+  return dispatch => {
+    dispatch(removeTodoAction(todo.id));
+
+    return API.deleteTodo(todo.id).catch(() => {
+      dispatch(addTodoAction(todo));
+      alert("Erro aconteceu");
+    });
+  };
 }
 
 // middleware
@@ -106,6 +120,13 @@ const logger = store => next => action => {
   return result;
 };
 
+const thunker = store => next => action => {
+  if (typeof action === 'function') {
+      return action(store.dispatch)
+  }
+  return next(action)
+}
+
 // Reducers
 function todos(state = [], action) {
   switch (action.type) {
@@ -121,7 +142,7 @@ function todos(state = [], action) {
             : Object.assign({}, todo, { complete: !todo.complete })
       );
     case RECEIVE_DATA:
-      return action.todos
+      return action.todos;
     default:
       return state;
   }
@@ -134,7 +155,7 @@ function goals(state = [], action) {
     case REMOVE_GOAL:
       return state.filter(goal => goal.id !== action.id);
     case RECEIVE_DATA:
-      return action.goals
+      return action.goals;
     default:
       return state;
   }
@@ -148,7 +169,6 @@ function loading(state = true, action) {
       return false;
     default:
       return state;
-
   }
 }
 
@@ -159,63 +179,56 @@ const store = Redux.createStore(
     goals,
     loading
   }),
-  Redux.applyMiddleware(checker, logger)
+  Redux.applyMiddleware(thunker, checker, logger)
 );
-
 </script>
 
 <script type="text/babel" >
-  function List(props) {
+function List(props) {
   return (
     <ul>
       {props.items.map(item => {
         return (
-          <li key={item.id} onClick={() => props.toggle && props.toggle(item)} style={{textDecoration: item.complete ? "line-through" : "none"}}>
+          <li
+            key={item.id}
+            onClick={() => props.toggle && props.toggle(item)}
+            style={{ textDecoration: item.complete ? "line-through" : "none" }}
+          >
             <span>{item.name}</span>
             <button onClick={() => props.remove(item)}>x</button>
           </li>
         );
       })}
     </ul>
-  )
-  }
+  );
+}
 
-  class Todos extends React.Component {
+class Todos extends React.Component {
   addItem = e => {
     e.preventDefault();
     const name = this.input.value;
 
-    return API.saveTodo(name).then((todo) => {
-      this.input.value = "";
-      this.props.store.dispatch(
-        addTodoAction(todo)
-      );
-    }).catch(() => {
-      alert('There was an error')
-    })
-
+    return API.saveTodo(name)
+      .then(todo => {
+        this.input.value = "";
+        this.props.store.dispatch(addTodoAction(todo));
+      })
+      .catch(() => {
+        alert("There was an error");
+      });
   };
 
   removeItem = todo => {
-    // this.props.store.dispatch(handleDeleteTodo(todo.id));
-
-    this.props.store.dispatch(removeTodoAction(todo.id));
-
-    return API.deleteTodo(todo.id)
-      .catch(() => {
-        this.props.store.dispatch(addTodoAction(todo))
-        alert('Erro aconteceu')
-      })
+    this.props.store.dispatch(handleDeleteTodo(todo));
   };
 
-  toggleItem = (todo) => {
-    this.props.store.dispatch(toggleTodoAction(todo.id))
-    return API.saveTodoToggle(todo.id)
-    .catch(() => {
-      this.props.store.dispatch(toggleTodoAction(todo.id))
-      alert('Toggle fudeu')
-    })
-  }
+  toggleItem = todo => {
+    this.props.store.dispatch(toggleTodoAction(todo.id));
+    return API.saveTodoToggle(todo.id).catch(() => {
+      this.props.store.dispatch(toggleTodoAction(todo.id));
+      alert("Toggle fudeu");
+    });
+  };
 
   render() {
     return (
@@ -227,7 +240,11 @@ const store = Redux.createStore(
           ref={input => (this.input = input)}
         />
         <button onClick={this.addItem}>Add Todo</button>
-        <List items={this.props.todos} remove={this.removeItem} toggle={this.toggleItem}/>
+        <List
+          items={this.props.todos}
+          remove={this.removeItem}
+          toggle={this.toggleItem}
+        />
       </div>
     );
   }
@@ -237,26 +254,24 @@ class Goals extends React.Component {
   addItem = e => {
     e.preventDefault();
     const name = this.input.value;
-    return API.saveGoal(name).then((goal) => {
-      this.input.value = "";
-      this.props.store.dispatch(
-        addGoalAction(goal)
-      );
-    }).catch(() => {
-      alert('Errouuuuuuu')
-    })
+    return API.saveGoal(name)
+      .then(goal => {
+        this.input.value = "";
+        this.props.store.dispatch(addGoalAction(goal));
+      })
+      .catch(() => {
+        alert("Errouuuuuuu");
+      });
   };
 
-  removeItem = (goal) => {
+  removeItem = goal => {
     this.props.store.dispatch(removeGoalAction(goal.id));
 
-    return API.deleteGoal(goal.id)
-    .catch(() => {
+    return API.deleteGoal(goal.id).catch(() => {
       this.props.store.dispatch(addGoalAction(goal));
-      alert('Goal fudeu')
-    })
-
-  }
+      alert("Goal fudeu");
+    });
+  };
 
   render() {
     return (
@@ -268,7 +283,7 @@ class Goals extends React.Component {
           ref={input => (this.input = input)}
         />
         <button onClick={this.addItem}>Add Goal</button>
-        <List items={this.props.goals} remove={this.removeItem}/>
+        <List items={this.props.goals} remove={this.removeItem} />
       </div>
     );
   }
@@ -277,10 +292,7 @@ class Goals extends React.Component {
 class App extends React.Component {
   componentDidMount() {
     const { store } = this.props;
-    Promise.all([
-      API.fetchTodos(),
-      API.fetchGoals()
-    ]).then(([todos, goals]) => {
+    Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
       store.dispatch(receiveDataAction(todos, goals));
     });
     store.subscribe(() => this.forceUpdate());
@@ -291,14 +303,14 @@ class App extends React.Component {
     return (
       <div>
         REACT APP
-        {loading ?
+        {loading ? (
           <p>Loading Data</p>
-          :
+        ) : (
           <div>
             <Todos todos={todos} store={store} />
             <Goals goals={goals} store={store} />
           </div>
-        }
+        )}
       </div>
     );
   }
