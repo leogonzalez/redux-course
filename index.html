@@ -92,6 +92,53 @@ function handleDeleteTodo(todo) {
   };
 }
 
+function handleDeleteGoal(goal) {
+  return dispatch => {
+    dispatch(removeGoalAction(goal.id));
+
+    return API.deleteGoal(goal.id).catch(() => {
+      dispatch(addGoalAction(goal));
+      alert("Goal fudeu");
+    });
+  };
+}
+
+function handleAddGoal(name, callback) {
+  return dispatch => {
+    return API.saveGoal(name)
+      .then(goal => {
+        dispatch(addGoalAction(goal));
+        callback();
+      })
+      .catch(() => {
+        alert("Errouuuuuuu");
+      });
+  };
+}
+
+function handleToggleTodo(todo) {
+  return dispatch => {
+    dispatch(toggleTodoAction(todo.id));
+    return API.saveTodoToggle(todo.id).catch(() => {
+      dispatch(toggleTodoAction(todo.id));
+      alert("Toggle fudeu mano");
+    });
+  };
+}
+
+function handleAddTodo(name, callback) {
+  return (dispatch) => {
+    return API.saveTodo(name)
+      .then(todo => {
+        dispatch(addTodoAction(todo));
+        callback();
+      })
+      .catch(() => {
+        alert("There was an error");
+      });
+  }
+}
+
 // middleware
 
 const checker = store => next => action => {
@@ -121,11 +168,11 @@ const logger = store => next => action => {
 };
 
 const thunker = store => next => action => {
-  if (typeof action === 'function') {
-      return action(store.dispatch)
+  if (typeof action === "function") {
+    return action(store.dispatch);
   }
-  return next(action)
-}
+  return next(action);
+};
 
 // Reducers
 function todos(state = [], action) {
@@ -206,16 +253,11 @@ function List(props) {
 class Todos extends React.Component {
   addItem = e => {
     e.preventDefault();
-    const name = this.input.value;
-
-    return API.saveTodo(name)
-      .then(todo => {
-        this.input.value = "";
-        this.props.store.dispatch(addTodoAction(todo));
+    this.props.store.dispatch(
+      handleAddTodo(this.input.value, () => {
+        return (this.input.value = "");
       })
-      .catch(() => {
-        alert("There was an error");
-      });
+    );
   };
 
   removeItem = todo => {
@@ -223,11 +265,7 @@ class Todos extends React.Component {
   };
 
   toggleItem = todo => {
-    this.props.store.dispatch(toggleTodoAction(todo.id));
-    return API.saveTodoToggle(todo.id).catch(() => {
-      this.props.store.dispatch(toggleTodoAction(todo.id));
-      alert("Toggle fudeu");
-    });
+    this.props.store.dispatch(handleToggleTodo(todo));
   };
 
   render() {
@@ -253,24 +291,16 @@ class Todos extends React.Component {
 class Goals extends React.Component {
   addItem = e => {
     e.preventDefault();
-    const name = this.input.value;
-    return API.saveGoal(name)
-      .then(goal => {
+
+    this.props.store.dispatch(
+      handleAddGoal(this.input.value, () => {
         this.input.value = "";
-        this.props.store.dispatch(addGoalAction(goal));
       })
-      .catch(() => {
-        alert("Errouuuuuuu");
-      });
+    );
   };
 
   removeItem = goal => {
-    this.props.store.dispatch(removeGoalAction(goal.id));
-
-    return API.deleteGoal(goal.id).catch(() => {
-      this.props.store.dispatch(addGoalAction(goal));
-      alert("Goal fudeu");
-    });
+    this.props.store.dispatch(handleDeleteGoal(goal));
   };
 
   render() {
