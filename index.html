@@ -139,6 +139,14 @@ function handleAddTodo(name, callback) {
   }
 }
 
+function handleReceiveData() {
+  return (dispatch) => {
+    Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
+      store.dispatch(receiveDataAction(todos, goals));
+    });
+  };
+}
+
 // middleware
 
 const checker = store => next => action => {
@@ -322,9 +330,7 @@ class Goals extends React.Component {
 class App extends React.Component {
   componentDidMount() {
     const { store } = this.props;
-    Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
-      store.dispatch(receiveDataAction(todos, goals));
-    });
+    store.dispatch(handleReceiveData());
     store.subscribe(() => this.forceUpdate());
   }
   render() {
