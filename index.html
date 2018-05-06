@@ -290,6 +290,22 @@ class Todos extends React.Component {
   }
 }
 
+class ConnectedTodos extends React.Component {
+  render() {
+    return (
+      <Context.Consumer>
+        {(store) => {
+          const {todos} = store.getState();
+
+          return (
+            <Todos todos={todos} dispatch={store.dispatch} />
+          )
+        }}
+      </Context.Consumer>
+    )
+  }
+}
+
 class Goals extends React.Component {
   addItem = e => {
     e.preventDefault();
@@ -321,6 +337,21 @@ class Goals extends React.Component {
   }
 }
 
+class ConnectedGoals extends React.Component {
+  render() {
+    return (
+      <Context.Consumer>
+        {(store) => {
+          const {goals} = store.getState();
+
+          return (
+            <Goals goals={goals} dispatch={store.dispatch} />
+          )
+        }}
+      </Context.Consumer>
+    )
+  }
+}
 // how to improve getting the store to our component?
 // 1. Passing store all the way down to nested components is not scalable
 // 2. Re rending components only when the data they need change
@@ -341,8 +372,8 @@ class App extends React.Component {
           <p>Loading Data</p>
         ) : (
           <div>
-            <Todos todos={todos} dispatch={store.dispatch} />
-            <Goals goals={goals} dispatch={store.dispatch} />
+            <ConnectedTodos />
+            <ConnectedGoals/>
           </div>
         )}
       </div>
